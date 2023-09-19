@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <title>最新</title>
+
+    <meta name="description" content="Source code generated using layoutit.com">
+    <meta name="author" content="LayoutIt!">
+
+    <link href="{{url_for('static', filename='css/bootstrap.min.css')}}" rel="stylesheet">
+    <link href="{{url_for('static', filename='css/style.css')}}" rel="stylesheet">
+</head>
+<body>
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-md-12">
+            <h3>列表</h3>
+            <button onclick="logout()" type="button" class="btn btn-success">退出登陆</button>
+            <table id="data-table" class="table table-sm table-bordered" style="font-size: 0.8rem;">
+                <thead>
+                <tr>
+                    <th>no</th>
+                    <th>name</th>
+                    <th>version</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for data in datas%}
+                <tr>
+<!--                    <td>{{ loop.index }}</td>-->
+                    <td>{{ data.index }}</td>
+                    <td>
+                        <label>
+                            <a href="{{ data.link }}">{{ data.name }}</a>
+                            <img id="{{ data.name }}" class="disable-icon" src="{{url_for('static', filename='img/pic_details.png')}}">
+                            <div id="pic__{{ data.name }}" class="tip">
+                                <img src="{{ url_for('static', filename=data.pic) }}" class="pic-img">
+                            </div>
+                        </label>
+                    </td>
+                    <td>{{ data.time }}</td>
+                </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<script src="{{url_for('static', filename='js/jquery.min.js')}}"></script>
+<script src="{{url_for('static', filename='js/bootstrap.min.js')}}"></script>
+<script src="{{url_for('static', filename='js/scripts.js')}}"></script>
+
+</body>
+</html>

@@ -165,4 +165,4 @@ mgsdaigou/static/img/thumbs/*.jpg
 mgsdaigou/static/img/thumbs/*.jpeg
 
 # .ini
-./skrbt/skrbt.ini
+*.ini

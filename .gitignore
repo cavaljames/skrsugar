@@ -160,6 +160,9 @@ cython_debug/
 .idea/
 
 
-# img
+# .img
 mgsdaigou/static/img/thumbs/*.jpg
 mgsdaigou/static/img/thumbs/*.jpeg
+
+# .ini
+skrbt/*.ini

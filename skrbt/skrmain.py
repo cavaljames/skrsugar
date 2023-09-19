@@ -7,8 +7,15 @@
 ------------    ------- --------    -----------
 2023/1/29      zhangyu 1.0         None
 """
+import copy
+import datetime
+import json
+import math
 import os
+import time
+import string
 import requests
+import random
 from bs4 import BeautifulSoup
 from prettytable import PrettyTable
 from skrbt.conf import get_conf, set_conf
@@ -25,12 +32,12 @@ HEADER = {
     # ':scheme': 'https',
     # 'Referer': 'https://skrbtju.top/',
 
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/116.0.0.0 Safari/537.36',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;'
               'v=b3;q=0.7',
     'accept-language': 'zh-CN,zh;q=0.9',
     'accept-encoding': 'gzip, deflate, br',
-    'Sec-Ch-Ua': '"Chromium";v="116", "Not)A;Brand";v="24", "Google Chrome";v="116"',
+    'Sec-Ch-Ua': '"Google Chrome";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
     'Upgrade-Insecure-Requests': '1',
     'Sec-Ch-Ua-Mobile': '?0',
     'Sec-Ch-Ua-Platform': '"macOS"',
@@ -87,15 +94,16 @@ def magnet(magnet_url, home_page=get_conf('skrbt', 'HOME_PAGE')):
     return magnet_href
 
 
-# cookie
+# 通过selenium点击，模拟人操作的方式获取cookie，现以废弃
 def refresh_cookie(home_page=get_conf('skrbt', 'HOME_PAGE')):
+    """deprecated!!!"""
     chrome_options = webdriver.ChromeOptions()
     # 无图模式
     chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
     # 设置浏览器窗口大小
     chrome_options.add_argument("--window-size=256,256")
     # 设置浏览器显示百分比(缩放级别)
-    chrome_options.add_argument("--force-device-scale-factor=0.5")
+    chrome_options.add_argument("--force-device-scale-factor=0.7")
 
     driver = webdriver.Chrome(options=chrome_options)
     driver.get(home_page)
@@ -124,6 +132,41 @@ def refresh_cookie(home_page=get_conf('skrbt', 'HOME_PAGE')):
     return cookies
 
 
+def get_refresh_cookie():
+    start_time, token_time = math.floor(time.time() * 1000) - 10001, math.floor(time.time() * 1000)
+    aywcUid = f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
+    gen_token_url = f'https://skrbtju.top/anti/recaptcha/v4/gen?aywcUid={aywcUid}&_={token_time}'
+    token = json.loads(requests.get(gen_token_url).text).get('token')
+    cost_time = math.floor(time.time() * 1000) - start_time
+    verify_url = f'https://skrbtju.top/anti/recaptcha/v4/verify?token={token}&aywcUid={aywcUid}&costtime={cost_time}'
+    verify_headers = copy.deepcopy(HEADER)
+    verify_headers.update({'cookie': f'aywcUid={aywcUid}'})
+    resp = requests.get(verify_url, headers=verify_headers, allow_redirects=False)
+    cookies = resp.cookies
+    if len(cookies):
+        cookie_str = '; '.join(['='.join([cookie.name, cookie.value]) for cookie in cookies])
+    else:
+        chrome_options = webdriver.ChromeOptions()
+        # 无图模式
+        chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+        # 设置浏览器窗口大小
+        chrome_options.add_argument("--window-size=256,256")
+        # 设置浏览器显示百分比(缩放级别)
+        chrome_options.add_argument("--force-device-scale-factor=0.6")
+
+        driver = webdriver.Chrome(options=chrome_options)
+        driver.get(verify_url)
+        cookie_list = driver.get_cookies()
+        cookie_str = '; '.join(['='.join([item['name'], item['value']]) for item in cookie_list])
+        driver.close()
+    if len(cookie_str):
+        print(f'==== Get cookie succeed. ====')
+        print(cookie_str)
+    else:
+        print(f'==== Get cookie failed! ====')
+    return cookie_str
+
+
 if __name__ == '__main__':
     search_kws = {}
     kwstr = input('Type in key_word(required):')
@@ -133,7 +176,8 @@ if __name__ == '__main__':
             search_kws.update({'home_page': hp})
         if ck := input('Type in COOKIE(default in skrbt.ini):'):
             if ck.lower() in ('r', 'refresh'):
-                ck = refresh_cookie(hp or get_conf('skrbt', 'HOME_PAGE'))
+                # ck = refresh_cookie(hp or get_conf('skrbt', 'HOME_PAGE')) # deprecated
+                ck = get_refresh_cookie()
             search_kws.update({'cookie': ck})
         for kw in kws:
             if kw:

@@ -94,7 +94,7 @@ def magnet(magnet_url, home_page=get_conf('skrbt', 'HOME_PAGE')):
     return magnet_href
 
 
-# 通过selenium点击，模拟人操作的方式获取cookie，现以废弃
+# 通过selenium点击，模拟人操作的方式获取cookie，现已废弃
 def refresh_cookie(home_page=get_conf('skrbt', 'HOME_PAGE')):
     """deprecated!!!"""
     chrome_options = webdriver.ChromeOptions()

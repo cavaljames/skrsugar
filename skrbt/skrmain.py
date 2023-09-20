@@ -50,7 +50,9 @@ HEADER = {
 
 def skrbt(key_word, home_page=get_conf('skrbt', 'HOME_PAGE'), cookie=get_conf('skrbt', 'COOKIE')):
     HEADER.update({'referer': home_page, 'cookie': cookie})
-    magnet_dict, offset, next_page = search(key_word=key_word, home_page=home_page)
+    search_page = int(key_word.split('_')[1]) if len(key_word.split('_')) > 1 else 1
+    key_word = key_word.split('_')[0]
+    magnetd, offset, next_page = search(key_word=key_word, home_page=home_page, page=search_page)
     # 更新配置文件
     set_conf(group='skrbt', name='HOME_PAGE', value=home_page)
     set_conf(group='skrbt', name='COOKIE', value=cookie)
@@ -58,15 +60,15 @@ def skrbt(key_word, home_page=get_conf('skrbt', 'HOME_PAGE'), cookie=get_conf('s
     # 继续选择
     while not (chose := input('Chose one to get magnet or type in "n/N" to next page or type in "new keyword" to search:').lower()).isdigit():
         if chose in {'n', 'N'}:
-            magnet_dict, offset, next_page = search(key_word=key_word, home_page=home_page, magnet_dict=magnet_dict, page=next_page, offset=offset)
+            magnetd, offset, next_page = search(key_word=key_word, home_page=home_page, magnet_dict=magnetd, page=next_page, offset=offset)
         else:
-            magnet_dict, offset, next_page = search(key_word=chose, home_page=home_page, magnet_dict=magnet_dict, offset=offset)
-    mg = magnet_dict.get(chose)
-    while not mg:
+            magnetd, offset, next_page = search(key_word=chose, home_page=home_page, magnet_dict=magnetd, offset=offset)
+    magnet_url = magnetd.get(chose)
+    while not magnet_url:
         print('Wrone id!!!')
-        mg = magnet_dict.get(input('Chose one to get magnet:'))
+        magnet_url = magnetd.get(input('Chose one to get magnet:'))
 
-    return mg, home_page
+    return magnet_url, home_page, magnetd
 
 
 def search(key_word, home_page, magnet_dict={}, page=1, offset=0):
@@ -168,8 +170,8 @@ def get_refresh_cookie():
 
 
 if __name__ == '__main__':
-    search_kws = {}
-    kwstr = input('Type in key_word(required):')
+    search_kws, magnet_dict, hpurl = {}, {}, ''
+    kwstr = input('Type in key_word(required, add "_2" for page 2 directly):')
     kws = kwstr.split(',')
     if len(kws) > 0:
         if hp := input('Type in HOME_PAGE(default in skrbt.ini):'):
@@ -182,19 +184,23 @@ if __name__ == '__main__':
         for kw in kws:
             if kw:
                 search_kws.update({'key_word': kw})
-                mgurl, hpurl = skrbt(**search_kws)
+                mgurl, hpurl, magnet_dict = skrbt(**search_kws)
                 print(f'\033[1;31;40m{magnet(mgurl, hpurl)}\033[0m')
-        ctn = input('Continue?(n/N or key_word):')
+        ctn = input('Continue?(n/N or key_word or magnet_index(select again)):')
         while ctn not in ('n', 'N'):
             kws = ctn.split(',')
             if len(kws) > 0:
-                for kw in kws:
-                    if kw:
-                        search_kws.update({'key_word': kw})
-                        mgurl, hpurl = skrbt(**search_kws)
-                        print(f'\033[1;31;40m{magnet(mgurl, hpurl)}\033[0m')
+                if len(kws) == 1 and kws[0].isdigit() and magnet_dict and kws[0] in magnet_dict:
+                    mg = magnet_dict.get(kws[0])
+                    print(f'\033[1;31;40m{magnet(mg, hpurl)}\033[0m')
+                else:
+                    for kw in kws:
+                        if kw:
+                            search_kws.update({'key_word': kw})
+                            mgurl, hpurl, magnet_dict = skrbt(**search_kws)
+                            print(f'\033[1;31;40m{magnet(mgurl, hpurl)}\033[0m')
             else:
                 print('No key_word to search!')
-            ctn = input('Continue?(n/N or key_word):')
+            ctn = input('Continue?(n/N or key_word or magnet_index(select again)):')
     else:
         print('No key_word to search!')

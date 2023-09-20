@@ -27,6 +27,6 @@ def compair_cookie(cookie1, cookie2):
 
 
 if __name__ == '__main__':
-    from skrbt.skrmain import refresh_cookie, skrbt, get_refresh_cookie
-    # refresh_cookie()
+    from skrbt.skrmain import get_refresh_cookie
     get_refresh_cookie()
+

@@ -45,7 +45,7 @@ def get_thumbnails(home_page, max_page):
             rds.hset(link, 'time', datetime.datetime.now().strftime('%Y%m%d'))
             img_name = f'./static/{src}'
             if not os.path.exists(img_name):
-                download_image(img['src'], )
+                download_image(img['src'], img_name)
             print(index, link, sep='\t\t')
             index += 1
         page += 1

@@ -36,7 +36,8 @@ def parse_search(search_soup):
         video_dmmimg = specific_video_jacket.select_one('img').get('src')
         video_libimg = specific_video_jacket.select_one('img').get('onerror')
         video_libimg = video_libimg.split('\'')[1] if len(video_libimg.split('\'')) == 3 else video_libimg
-        print(video_id, video_href, video_dmmimg, video_libimg)
+        video_actress = specific_video_info.select_one('div#video_cast span.cast a[href]').get_text(strip=True)
+        print(video_id, video_href, video_dmmimg, video_libimg, video_actress)
     elif len(video_list):
         for video_div in search_soup.select('div.videothumblist div.videos div.video'):
             video_id = video_div.select_one('div.id').get_text(strip=True)
@@ -48,4 +49,4 @@ def parse_search(search_soup):
 
 
 if __name__ == '__main__':
-    parse_search(search_jlib('ssis-091'))
+    parse_search(search_jlib(''))

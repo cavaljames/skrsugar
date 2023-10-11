@@ -34,5 +34,5 @@ DYTT_TYPE_TAGS_KEY = 'DYTT_TYPE_TAGS'
 WITHOUT_LOGIN = 401
 
 # zydg
-ZYDG_HOMEPAGE = 'http://www.mgsdaigou1.vip'
+ZYDG_HOMEPAGE = 'http://www.mgsdaigou88.vip'
 ZYDG_ENCODING = 'utf8'

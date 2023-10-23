@@ -1,4 +1,4 @@
-set folderPath to "sugar-mac:Users:sugar:PycharmProjects:skrsugar:screenshot:"
+set folderPath to "sugar-mac:Users:sugar:PycharmProjects:skrsugar:screenshots:"
 tell application "Finder"
 	activate
 	open alias folderPath

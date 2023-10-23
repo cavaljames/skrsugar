@@ -32,12 +32,11 @@ HEADER = {
     # ':scheme': 'https',
     # 'Referer': 'https://skrbtju.top/',
 
-    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/117.0.0.0 Safari/537.36',
-    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;'
-              'v=b3;q=0.7',
+    'user-agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/118.0.0.0 Safari/537.36',
+    'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;'
+              'q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-language': 'zh-CN,zh;q=0.9',
     'accept-encoding': 'gzip, deflate, br',
-    'Sec-Ch-Ua': '"Google Chrome";v="117", "Not;A=Brand";v="8", "Chromium";v="117"',
     'Upgrade-Insecure-Requests': '1',
     'Sec-Ch-Ua-Mobile': '?0',
     'Sec-Ch-Ua-Platform': '"macOS"',
@@ -48,21 +47,42 @@ HEADER = {
 }
 
 
+def get_user_agent():
+    chrome_options = webdriver.ChromeOptions()
+    chrome_options.add_experimental_option("prefs", {"profile.managed_default_content_settings.images": 2})
+    chrome_options.add_argument("--window-size=256,256")
+    chrome_options.add_argument("--force-device-scale-factor=0.6")
+
+    driver = webdriver.Chrome(options=chrome_options)
+    driver.get('https://www.baidu.com')
+    user_agent = driver.execute_script("return navigator.userAgent")
+    return user_agent
+
+
+def get_skrbt_header(user_agent):
+    header = copy.deepcopy(HEADER)
+    header.update({'user-agent': user_agent})
+    return header
+
+
 def skrbt(key_word, home_page=get_conf('skrbt', 'HOME_PAGE'), cookie=get_conf('skrbt', 'COOKIE')):
-    HEADER.update({'referer': home_page, 'cookie': cookie})
+    skr_header = get_skrbt_header(user_agent=get_conf('skrbt', 'chrome_ua'))
+    skr_header.update({'referer': home_page, 'cookie': cookie})
     search_page = int(key_word.split('_')[1]) if len(key_word.split('_')) > 1 else 1
     key_word = key_word.split('_')[0]
-    magnetd, offset, next_page = search(key_word=key_word, home_page=home_page, page=search_page)
+    magnetd, offset, next_page = search(key_word=key_word, home_page=home_page, page=search_page, header=skr_header)
     # 更新配置文件
-    set_conf(group='skrbt', name='HOME_PAGE', value=home_page)
-    set_conf(group='skrbt', name='COOKIE', value=cookie)
+    set_conf(group='skrbt', name='home_page', value=home_page)
+    set_conf(group='skrbt', name='cookie', value=cookie)
 
     # 继续选择
     while not (chose := input('Chose one to get magnet or type in "n/N" to next page or type in "new keyword" to search:').lower()).isdigit():
         if chose in {'n', 'N'}:
-            magnetd, offset, next_page = search(key_word=key_word, home_page=home_page, magnet_dict=magnetd, page=next_page, offset=offset)
+            magnetd, offset, next_page = search(key_word=key_word, home_page=home_page, magnet_dict=magnetd, page=next_page, offset=offset,
+                                                header=skr_header)
         else:
-            magnetd, offset, next_page = search(key_word=chose, home_page=home_page, magnet_dict=magnetd, offset=offset)
+            magnetd, offset, next_page = search(key_word=chose, home_page=home_page, magnet_dict=magnetd, offset=offset,
+                                                header=skr_header)
     magnet_url = magnetd.get(chose)
     while not magnet_url:
         print('Wrone id!!!')
@@ -71,8 +91,8 @@ def skrbt(key_word, home_page=get_conf('skrbt', 'HOME_PAGE'), cookie=get_conf('s
     return magnet_url, home_page, magnetd
 
 
-def search(key_word, home_page, magnet_dict={}, page=1, offset=0):
-    soup = BeautifulSoup(requests.get(url=f'{home_page}/search?keyword={key_word}&p={page}', headers=HEADER).content, 'html.parser')
+def search(key_word, home_page, magnet_dict={}, page=1, offset=0, header=None):
+    soup = BeautifulSoup(requests.get(url=f'{home_page}/search?keyword={key_word}&p={page}', headers=header).content, 'html.parser')
     uls, table, offset_point = soup.find_all('ul', 'list-unstyled'), PrettyTable(['id', 'name', 'size', 'time']), 0
     for i, ul in enumerate(uls):
         ahref = ul.find('a', 'rrt common-link')
@@ -89,8 +109,9 @@ def search(key_word, home_page, magnet_dict={}, page=1, offset=0):
 
 
 def magnet(magnet_url, home_page=get_conf('skrbt', 'HOME_PAGE')):
-    HEADER.update({'referer': f'{home_page}/search'})
-    soup = BeautifulSoup(requests.get(url=magnet_url, headers=HEADER).content, 'html.parser')
+    skr_header = get_skrbt_header(user_agent=get_conf('skrbt', 'chrome_ua'))
+    skr_header.update({'referer': f'{home_page}/search'})
+    soup = BeautifulSoup(requests.get(url=magnet_url, headers=skr_header).content, 'html.parser')
     magnet_href = soup.find('a', {'id': 'magnet'}).get('href')
     os.system(f"osascript -e 'set the clipboard to \"{magnet_href}\"'")
     return magnet_href
@@ -141,12 +162,14 @@ def get_refresh_cookie():
     token = json.loads(requests.get(gen_token_url).text).get('token')
     cost_time = math.floor(time.time() * 1000) - start_time
     verify_url = f'https://skrbtju.top/anti/recaptcha/v4/verify?token={token}&aywcUid={aywcUid}&costtime={cost_time}'
-    verify_headers = copy.deepcopy(HEADER)
+    verify_headers = get_skrbt_header(user_agent=get_conf('skrbt', 'chrome_ua'))
     verify_headers.update({'cookie': f'aywcUid={aywcUid}'})
     resp = requests.get(verify_url, headers=verify_headers, allow_redirects=False)
     cookies = resp.cookies
     if len(cookies):
         cookie_str = '; '.join(['='.join([cookie.name, cookie.value]) for cookie in cookies])
+        # ADD aywcUid
+        cookie_str = f'{cookie_str}; aywcUid={aywcUid}'
     else:
         chrome_options = webdriver.ChromeOptions()
         # 无图模式
@@ -174,6 +197,10 @@ if __name__ == '__main__':
     kwstr = input('Type in key_word(required, add "_2" for page 2 directly):')
     kws = kwstr.split(',')
     if len(kws) > 0:
+        if update_ua := input('update UA in HEADER(y/n)?(default in skrbt.ini):'):
+            if update_ua in {'yes', 'y'}:
+                ua = get_user_agent()
+                set_conf('skrbt', 'chrome_ua', ua)
         if hp := input('Type in HOME_PAGE(default in skrbt.ini):'):
             search_kws.update({'home_page': hp})
         if ck := input('Type in COOKIE(default in skrbt.ini):'):

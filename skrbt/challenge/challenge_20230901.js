@@ -1,3 +1,4 @@
+// https://b5.us.yaacdn.com/js/challenge.min.js
 var remain = 10;
 var startTime = new Date().getTime();
 $(document).ready(function() {
@@ -115,5 +116,4 @@ function parseRootDomain() {
         rootDomain = "." + tokens[tokens.length - 2] + "." + tokens[tokens.length - 1]
     }
     return rootDomain
-}
-;
+};

@@ -42,4 +42,5 @@ def screen_shot(video_path, screen_shot_path):
 
 
 if __name__ == '__main__':
-    screen_shot('/Users/sugar/Downloads/', '/Users/sugar/PycharmProjects/skrsugar/screenshot')
+    import sys
+    screen_shot(sys.argv[1], '/Users/sugar/PycharmProjects/skrsugar/screenshot')

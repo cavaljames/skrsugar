@@ -110,7 +110,7 @@ def search(key_word, home_page, magnet_dict={}, page=1, offset=0, header=None):
 
 def magnet(magnet_url, home_page=get_conf('skrbt', 'HOME_PAGE')):
     skr_header = get_skrbt_header(user_agent=get_conf('skrbt', 'chrome_ua'))
-    skr_header.update({'referer': f'{home_page}/search'})
+    skr_header.update({'referer': f'{home_page}/search', 'cookie': get_conf('skrbt', 'COOKIE')})
     soup = BeautifulSoup(requests.get(url=magnet_url, headers=skr_header).content, 'html.parser')
     magnet_href = soup.find('a', {'id': 'magnet'}).get('href')
     os.system(f"osascript -e 'set the clipboard to \"{magnet_href}\"'")

@@ -12,6 +12,7 @@ import cv2
 import random
 import os
 import sys
+import argparse
 
 MB = 1024 * 1024
 FACE_CLASSIER = cv2.CascadeClassifier(f'{cv2.data.haarcascades}/haarcascade_frontalface_default.xml')
@@ -26,7 +27,7 @@ def face_detect(cv2_image):
     return len(faces) > 0
 
 
-def screen_shot(video_dir, screen_shot_path, size_filter=150 * MB):
+def screen_shot(video_dir, screen_shot_path, num_capture=30, size_filter=150 * MB):
     for fpathe, dirs, fs in os.walk(video_dir):
         for f in fs:
             video_path = os.path.join(fpathe, f)
@@ -36,10 +37,10 @@ def screen_shot(video_dir, screen_shot_path, size_filter=150 * MB):
                 continue
             cap = cv2.VideoCapture(video_path)
             frame_count = int(cap.get(cv2.CAP_PROP_FRAME_COUNT))
-            face_counter, num_frames_to_capture = 0, 20
+            face_counter = 0
 
-            while face_counter < 20:
-                frame_indices = random.sample(range(frame_count), num_frames_to_capture)
+            while face_counter < num_capture:
+                frame_indices = random.sample(range(frame_count), num_capture)
 
                 for index in frame_indices:
                     cap.set(cv2.CAP_PROP_POS_FRAMES, index)
@@ -59,7 +60,7 @@ def screen_shot(video_dir, screen_shot_path, size_filter=150 * MB):
                             cv2.imwrite(f'{screen_shot_path}/{image_filename}', frame)
                             print(f'Saved screenshot {index} at {screen_shot_path}/{image_filename}')
                             face_counter += 1
-                            if face_counter >= 20:
+                            if face_counter >= num_capture:
                                 break
                         else:
                             print('no face detected! skip screenshot')
@@ -69,4 +70,15 @@ def screen_shot(video_dir, screen_shot_path, size_filter=150 * MB):
 
 
 if __name__ == '__main__':
-    screen_shot(sys.argv[1], '/Users/sugar/PycharmProjects/skrsugar/screenshots')
+    parser = argparse.ArgumentParser(description='Run screen_shot Config.')
+    parser.add_argument('-f, --filepath', dest='filepath', type=str, help='filepath to use', default=None)
+    parser.add_argument('-n, --num', dest='num', type=int, help='capture num pictures', default=30)
+    parser.add_argument('-s, --size_filter', dest='size_filter', type=int, help='file size filter(MB)', default=150)
+    args = parser.parse_args()
+    if args.filepath:
+        screen_shot(
+            video_dir=args.filepath,
+            num_capture=args.num,
+            size_filter=args.size_filter * MB,
+            screen_shot_path='/Users/sugar/PycharmProjects/skrsugar/screenshots'
+        )

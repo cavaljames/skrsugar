@@ -10,7 +10,7 @@
 import configparser
 
 target_configfile = './skrbt/skrbt.ini'
-conf = configparser.ConfigParser()
+conf = configparser.RawConfigParser()
 conf.read(target_configfile)
 
 

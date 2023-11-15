@@ -36,7 +36,6 @@ HEADER = {
     'accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;'
               'q=0.8,application/signed-exchange;v=b3;q=0.7',
     'accept-language': 'zh-CN,zh;q=0.9',
-    'accept-encoding': 'gzip, deflate, br',
     'Upgrade-Insecure-Requests': '1',
     'Sec-Ch-Ua-Mobile': '?0',
     'Sec-Ch-Ua-Platform': '"macOS"',
@@ -92,7 +91,9 @@ def skrbt(key_word, home_page=get_conf('skrbt', 'HOME_PAGE'), cookie=get_conf('s
 
 
 def search(key_word, home_page, magnet_dict={}, page=1, offset=0, header=None):
-    soup = BeautifulSoup(requests.get(url=f'{home_page}/search?keyword={key_word}&p={page}', headers=header).content, 'html.parser')
+    rep = requests.get(url=f'{home_page}/search?keyword={key_word}&p={page}', headers=header)
+    ctt = rep.content
+    soup = BeautifulSoup(ctt, 'html.parser')
     uls, table, offset_point = soup.find_all('ul', 'list-unstyled'), PrettyTable(['id', 'name', 'size', 'time']), 0
     for i, ul in enumerate(uls):
         ahref = ul.find('a', 'rrt common-link')
@@ -155,13 +156,13 @@ def refresh_cookie(home_page=get_conf('skrbt', 'HOME_PAGE')):
     return cookies
 
 
-def get_refresh_cookie():
+def get_refresh_cookie(home_page=get_conf('skrbt', 'HOME_PAGE')):
     start_time, token_time = math.floor(time.time() * 1000) - 10001, math.floor(time.time() * 1000)
     aywcUid = f"{''.join(random.choice(string.ascii_letters + string.digits) for _ in range(10))}_{datetime.datetime.now().strftime('%Y%m%d%H%M%S')}"
-    gen_token_url = f'https://skrbtju.top/anti/recaptcha/v4/gen?aywcUid={aywcUid}&_={token_time}'
+    gen_token_url = f'{home_page}/anti/recaptcha/v4/gen?aywcUid={aywcUid}&_={token_time}'
     token = json.loads(requests.get(gen_token_url).text).get('token')
     cost_time = math.floor(time.time() * 1000) - start_time
-    verify_url = f'https://skrbtju.top/anti/recaptcha/v4/verify?token={token}&aywcUid={aywcUid}&costtime={cost_time}'
+    verify_url = f'{home_page}/anti/recaptcha/v4/verify?token={token}&aywcUid={aywcUid}&costtime={cost_time}'
     verify_headers = get_skrbt_header(user_agent=get_conf('skrbt', 'chrome_ua'))
     verify_headers.update({'cookie': f'aywcUid={aywcUid}'})
     resp = requests.get(verify_url, headers=verify_headers, allow_redirects=False)
@@ -205,7 +206,6 @@ if __name__ == '__main__':
             search_kws.update({'home_page': hp})
         if ck := input('Type in COOKIE(default in skrbt.ini):'):
             if ck.lower() in ('r', 'refresh'):
-                # ck = refresh_cookie(hp or get_conf('skrbt', 'HOME_PAGE')) # deprecated
                 ck = get_refresh_cookie()
             search_kws.update({'cookie': ck})
         for kw in kws:
